@@ -170,6 +170,8 @@ const ActivityWidget = () => (
 export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [isCustomizing, setIsCustomizing] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [widgets, setWidgets] = useState<WidgetConfig[]>([
     { id: '1', type: 'stats', title: 'Total Revenue', visible: true },
     { id: '2', type: 'stats', title: 'Active Users', visible: true },
@@ -178,9 +180,122 @@ export default function App() {
     { id: '5', type: 'activity', title: 'Recent Activity', visible: true },
   ]);
 
+  const [redirectUri, setRedirectUri] = useState<string>('');
+
   const toggleWidget = (id: string) => {
     setWidgets(prev => prev.map(w => w.id === id ? { ...w, visible: !w.visible } : w));
   };
+
+  React.useEffect(() => {
+    // Fetch redirect URI for display/debugging
+    const fetchConfig = async () => {
+      try {
+        const response = await fetch('/api/auth/url');
+        if (response.ok) {
+          const { url } = await response.json();
+          const params = new URLSearchParams(url.split('?')[1]);
+          setRedirectUri(params.get('redirect_uri') || '');
+        }
+      } catch (e) {
+        console.error('Failed to fetch config', e);
+      }
+    };
+    fetchConfig();
+  }, []);
+
+  const handleLogin = async () => {
+    try {
+      const response = await fetch('/api/auth/url');
+      if (!response.ok) {
+        throw new Error('Failed to get auth URL');
+      }
+      const { url } = await response.json();
+
+      const authWindow = window.open(
+        url,
+        'spotify_oauth',
+        'width=600,height=700'
+      );
+
+      if (!authWindow) {
+        alert('Please allow popups for this site to connect your account.');
+      }
+    } catch (error) {
+      console.error('OAuth error:', error);
+      alert('Failed to start login process. Please check console.');
+    }
+  };
+
+  React.useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const origin = event.origin;
+      if (!origin.endsWith('.run.app') && !origin.includes('localhost')) {
+        return;
+      }
+      if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
+        setIsLoggedIn(true);
+        setAccessToken(event.data.payload.accessToken);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  if (!isLoggedIn) {
+    return (
+      <div className="flex h-screen bg-slate-50 font-sans text-slate-900 items-center justify-center p-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-md w-full bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden"
+        >
+          <div className="p-10 text-center">
+            <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-100 mx-auto mb-8">
+              <Activity className="text-white w-10 h-10" />
+            </div>
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-3">Welcome to Resonate</h1>
+            <p className="text-slate-500 mb-10 leading-relaxed">
+              Connect your Spotify account to personalize your dashboard and unlock advanced analytics.
+            </p>
+            
+            <button 
+              onClick={handleLogin}
+              className="w-full bg-[#1DB954] hover:bg-[#1ed760] text-white font-bold py-4 px-8 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-lg shadow-emerald-100 group"
+            >
+              <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.508 17.302c-.216.354-.675.467-1.028.249-2.815-1.722-6.36-2.111-10.534-1.157-.404.092-.812-.162-.904-.565-.092-.403.162-.811.565-.903 4.569-1.044 8.486-.595 11.652 1.343.353.217.466.676.249 1.033zm1.472-3.26c-.272.443-.853.582-1.296.31-3.223-1.98-8.136-2.553-11.948-1.396-.498.151-1.022-.132-1.173-.63-.151-.498.132-1.022.63-1.173 4.357-1.322 9.776-.677 13.48 1.596.443.272.582.853.31 1.296-.003-.003-.003-.003-.003-.003zm.127-3.413c-3.864-2.294-10.243-2.506-13.935-1.385-.593.18-1.22-.154-1.4-.747-.18-.593.154-1.22.747-1.4 4.244-1.288 11.288-1.04 15.735 1.6 0 .001.001.001.001.001.53.314.7.994.386 1.524-.314.53-.994.7-1.524.386-.003-.002-.007-.005-.01-.007z"/>
+              </svg>
+              Login with Spotify
+            </button>
+            
+            <div className="mt-8 flex flex-col items-center justify-center gap-4">
+              <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
+                <Settings className="w-3 h-3" />
+                <span>Secure OAuth 2.0 Authentication</span>
+              </div>
+              
+              {redirectUri && (
+                <div className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-left">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Required Redirect URI</p>
+                  <code className="text-[10px] text-indigo-600 break-all bg-white px-1 py-0.5 rounded border border-indigo-50 block">
+                    {redirectUri}
+                  </code>
+                  <p className="text-[9px] text-slate-400 mt-2 leading-tight">
+                    Ensure this exact URL is added to your Spotify Developer Dashboard under "Redirect URIs".
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="bg-slate-50 p-6 border-t border-slate-100 text-center">
+            <p className="text-xs text-slate-500">
+              By connecting, you agree to Resonate's Terms of Service and Privacy Policy.
+            </p>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
