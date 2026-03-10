@@ -344,6 +344,13 @@ export default function App() {
               </svg>
               Login with Spotify
             </button>
+
+            <button 
+              onClick={() => setIsLoggedIn(true)}
+              className="w-full mt-3 bg-slate-600 hover:bg-slate-700 text-white font-bold py-4 px-8 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-lg"
+            >
+              Bypass Authentication (Dev Mode)
+            </button>
             
             <div className="mt-8 flex flex-col items-center justify-center gap-4">
               <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
