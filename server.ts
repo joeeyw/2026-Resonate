@@ -10,6 +10,7 @@ const PORT = 3000;
 
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
+const OPENAI_API_KEY = process.env.GPT_API_KEY;
 const APP_URL = (process.env.APP_URL || `http://localhost:${PORT}`).replace(/\/$/, "");
 const REDIRECT_URI = `${APP_URL}/auth/callback`;
 
@@ -17,7 +18,8 @@ console.log("OAuth Config:", {
   APP_URL,
   REDIRECT_URI,
   HAS_CLIENT_ID: !!SPOTIFY_CLIENT_ID,
-  HAS_CLIENT_SECRET: !!SPOTIFY_CLIENT_SECRET
+  HAS_CLIENT_SECRET: !!SPOTIFY_CLIENT_SECRET,
+  HAS_OPENAI_KEY: !!OPENAI_API_KEY
 });
 
 app.use(express.json());
@@ -91,6 +93,46 @@ app.get("/auth/callback", async (req, res) => {
   } catch (error: any) {
     console.error("Spotify OAuth Error:", error.response?.data || error.message);
     res.status(500).send("Authentication failed");
+  }
+});
+
+// OpenAI Chat Endpoint
+app.post("/api/chat", async (req, res) => {
+  const { messages } = req.body;
+
+  if (!OPENAI_API_KEY) {
+    return res.status(500).json({ error: "OpenAI API key is not configured" });
+  }
+
+  if (!messages || !Array.isArray(messages)) {
+    return res.status(400).json({ error: "Messages array is required" });
+  }
+
+  try {
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-4",
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 500,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        },
+      }
+    );
+
+    const aiMessage = response.data.choices[0].message;
+    res.json({ message: aiMessage });
+  } catch (error: any) {
+    console.error("OpenAI API Error:", error.response?.data || error.message);
+    res.status(500).json({ 
+      error: "Failed to get response from OpenAI",
+      details: error.response?.data?.error?.message || error.message 
+    });
   }
 });
 

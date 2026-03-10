@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   MessageSquare, 
@@ -39,6 +39,12 @@ interface WidgetConfig {
   type: WidgetType;
   title: string;
   visible: boolean;
+}
+
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
 }
 
 // --- Mock Data ---
@@ -172,6 +178,16 @@ export default function App() {
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      role: 'assistant',
+      content: "Hello! I'm Resonate, your personal Spotify assistant. What are we listening to today?",
+      timestamp: new Date()
+    }
+  ]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
   const [widgets, setWidgets] = useState<WidgetConfig[]>([
     { id: '1', type: 'stats', title: 'Total Revenue', visible: true },
     { id: '2', type: 'stats', title: 'Active Users', visible: true },
@@ -185,6 +201,69 @@ export default function App() {
   const toggleWidget = (id: string) => {
     setWidgets(prev => prev.map(w => w.id === id ? { ...w, visible: !w.visible } : w));
   };
+
+  const sendMessage = async () => {
+    if (!inputMessage.trim() || isLoading) return;
+
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: inputMessage.trim(),
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map(m => ({
+            role: m.role,
+            content: m.content
+          }))
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response from AI');
+      }
+
+      const data = await response.json();
+      const aiMessage: ChatMessage = {
+        role: 'assistant',
+        content: data.message.content,
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Chat error:', error);
+      const errorMessage: ChatMessage = {
+        role: 'assistant',
+        content: "I'm sorry, I encountered an error. Please try again.",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   React.useEffect(() => {
     // Fetch redirect URI for display/debugging
@@ -250,9 +329,7 @@ export default function App() {
           className="max-w-md w-full bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden"
         >
           <div className="p-10 text-center">
-            <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-100 mx-auto mb-8">
-              <Activity className="text-white w-10 h-10" />
-            </div>
+            <img src={resonateLogo} alt="Resonate Logo" className="w-8 h-8 rounded-lg shadow-lg shadow-indigo-200 mb-3" />
             <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-3">Welcome to Resonate</h1>
             <p className="text-slate-500 mb-10 leading-relaxed">
               Connect your Spotify account to personalize your dashboard and unlock advanced analytics.
@@ -274,17 +351,6 @@ export default function App() {
                 <span>Secure OAuth 2.0 Authentication</span>
               </div>
               
-              {redirectUri && (
-                <div className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-left">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Required Redirect URI</p>
-                  <code className="text-[10px] text-indigo-600 break-all bg-white px-1 py-0.5 rounded border border-indigo-50 block">
-                    {redirectUri}
-                  </code>
-                  <p className="text-[9px] text-slate-400 mt-2 leading-tight">
-                    Ensure this exact URL is added to your Spotify Developer Dashboard under "Redirect URIs".
-                  </p>
-                </div>
-              )}
             </div>
           </div>
           <div className="bg-slate-50 p-6 border-t border-slate-100 text-center">
@@ -414,26 +480,39 @@ export default function App() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              <div className="flex flex-col gap-2">
-                <div className="bg-slate-100 rounded-2xl p-4 text-sm text-slate-700 rounded-tl-none max-w-[85%]">
-                  Hello! I'm your Resonate assistant. How can I help you with your dashboard today?
+              {messages.map((message, index) => (
+                <div key={index} className={cn(
+                  "flex flex-col gap-2",
+                  message.role === 'user' ? 'items-end' : ''
+                )}>
+                  <div className={cn(
+                    "rounded-2xl p-4 text-sm max-w-[85%]",
+                    message.role === 'user'
+                      ? "bg-indigo-600 text-white rounded-tr-none shadow-md shadow-indigo-100"
+                      : "bg-slate-100 text-slate-700 rounded-tl-none"
+                  )}>
+                    {message.content}
+                  </div>
+                  <span className={cn(
+                    "text-[10px] text-slate-400",
+                    message.role === 'user' ? 'mr-1' : 'ml-1'
+                  )}>
+                    {message.timestamp.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                  </span>
                 </div>
-                <span className="text-[10px] text-slate-400 ml-1">10:11 AM</span>
-              </div>
-
-              <div className="flex flex-col gap-2 items-end">
-                <div className="bg-indigo-600 rounded-2xl p-4 text-sm text-white rounded-tr-none max-w-[85%] shadow-md shadow-indigo-100">
-                  Can you show me the revenue trends for the last quarter?
+              ))}
+              {isLoading && (
+                <div className="flex flex-col gap-2">
+                  <div className="bg-slate-100 rounded-2xl p-4 text-sm text-slate-700 rounded-tl-none max-w-[85%]">
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                      <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                      <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    </div>
+                  </div>
                 </div>
-                <span className="text-[10px] text-slate-400 mr-1">10:12 AM</span>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <div className="bg-slate-100 rounded-2xl p-4 text-sm text-slate-700 rounded-tl-none max-w-[85%]">
-                  Sure! I've updated the "Revenue Growth" chart to show the last 3 months. You can also see the breakdown in the activity feed.
-                </div>
-                <span className="text-[10px] text-slate-400 ml-1">10:12 AM</span>
-              </div>
+              )}
+              <div ref={chatEndRef} />
             </div>
 
             <div className="p-4 border-t border-slate-100 bg-slate-50/50">
@@ -441,9 +520,17 @@ export default function App() {
                 <input 
                   type="text" 
                   placeholder="Type a message..." 
-                  className="w-full pl-4 pr-12 py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  disabled={isLoading}
+                  className="w-full pl-4 pr-12 py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all outline-none disabled:bg-slate-50 disabled:text-slate-400"
                 />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">
+                <button 
+                  onClick={sendMessage}
+                  disabled={isLoading || !inputMessage.trim()}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all disabled:bg-slate-300 disabled:cursor-not-allowed"
+                >
                   <ChevronLeft className="w-4 h-4 rotate-180" />
                 </button>
               </div>
