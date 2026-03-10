@@ -329,7 +329,7 @@ export default function App() {
           className="max-w-md w-full bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden"
         >
           <div className="p-10 text-center">
-            <img src={resonateLogo} alt="Resonate Logo" className="w-8 h-8 rounded-lg shadow-lg shadow-indigo-200 mb-3" />
+            <img src={resonateLogo} alt="Resonate Logo" className="w-8 h-8 rounded-lg shadow-lg shadow-indigo-200 mb-3 mx-auto" />
             <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-3">Welcome to Resonate</h1>
             <p className="text-slate-500 mb-10 leading-relaxed">
               Connect your Spotify account to personalize your dashboard and unlock advanced analytics.
