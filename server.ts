@@ -2,6 +2,8 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import axios from "axios";
 import dotenv from "dotenv";
+import path from "node:path";
+import { spawn } from "node:child_process";
 
 dotenv.config();
 
@@ -13,6 +15,8 @@ const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const OPENAI_API_KEY = process.env.GPT_API_KEY;
 const APP_URL = (process.env.APP_URL || `http://localhost:${PORT}`).replace(/\/$/, "");
 const REDIRECT_URI = `${APP_URL}/auth/callback`;
+const PYTHON_BIN = process.env.PYTHON_BIN || "python";
+const SMOLAGENT_SCRIPT = path.resolve(process.cwd(), "pyagent", "smolagent_runner.py");
 
 console.log("OAuth Config:", {
   APP_URL,
@@ -23,6 +27,74 @@ console.log("OAuth Config:", {
 });
 
 app.use(express.json());
+
+type ChatMessageInput = {
+  role: "system" | "user" | "assistant";
+  content: string;
+};
+
+type AgentResponse = {
+  content: string;
+};
+
+async function runSmolAgent(messages: ChatMessageInput[]): Promise<AgentResponse> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(PYTHON_BIN, [SMOLAGENT_SCRIPT], {
+      stdio: ["pipe", "pipe", "pipe"],
+      env: {
+        ...process.env,
+        OPENAI_API_KEY: OPENAI_API_KEY || "",
+      },
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString();
+    });
+
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    child.on("error", (error) => {
+      reject(error);
+    });
+
+    child.on("close", (code) => {
+      if (code !== 0) {
+        reject(new Error(stderr || `smolagents process exited with code ${code}`));
+        return;
+      }
+
+      const lines = stdout
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+      const lastLine = lines[lines.length - 1];
+
+      if (!lastLine) {
+        reject(new Error("No output from smolagents process"));
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(lastLine) as AgentResponse;
+        if (!parsed?.content || typeof parsed.content !== "string") {
+          reject(new Error("Invalid response format from smolagents process"));
+          return;
+        }
+        resolve(parsed);
+      } catch (error: any) {
+        reject(new Error(`Failed parsing smolagents output: ${error.message}`));
+      }
+    });
+
+    child.stdin.write(JSON.stringify({ messages }));
+    child.stdin.end();
+  });
+}
 
 // Spotify Auth URL Endpoint
 app.get("/api/auth/url", (req, res) => {
@@ -96,7 +168,7 @@ app.get("/auth/callback", async (req, res) => {
   }
 });
 
-// OpenAI Chat Endpoint
+// smolagents Chat Endpoint
 app.post("/api/chat", async (req, res) => {
   const { messages } = req.body;
 
@@ -108,30 +180,36 @@ app.post("/api/chat", async (req, res) => {
     return res.status(400).json({ error: "Messages array is required" });
   }
 
-  try {
-    const response = await axios.post(
-      "https://api.openai.com/v1/chat/completions",
-      {
-        model: "gpt-4",
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 500,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${OPENAI_API_KEY}`,
-        },
-      }
-    );
+  const normalizedMessages = messages
+    .filter((message: any) => {
+      return (
+        message &&
+        typeof message.content === "string" &&
+        ["system", "user", "assistant"].includes(message.role)
+      );
+    })
+    .map((message: any) => ({
+      role: message.role as "system" | "user" | "assistant",
+      content: message.content,
+    }));
 
-    const aiMessage = response.data.choices[0].message;
-    res.json({ message: aiMessage });
+  if (!normalizedMessages.length) {
+    return res.status(400).json({ error: "No valid chat messages were provided" });
+  }
+
+  try {
+    const agentResult = await runSmolAgent(normalizedMessages);
+    res.json({
+      message: {
+        role: "assistant",
+        content: agentResult.content,
+      },
+    });
   } catch (error: any) {
-    console.error("OpenAI API Error:", error.response?.data || error.message);
+    console.error("smolagents API Error:", error.message);
     res.status(500).json({ 
-      error: "Failed to get response from OpenAI",
-      details: error.response?.data?.error?.message || error.message 
+      error: "Failed to get response from smolagents",
+      details: error.message,
     });
   }
 });

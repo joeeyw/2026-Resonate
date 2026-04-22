@@ -1,0 +1,250 @@
+{
+  "datasetVersion": "1.0.0",
+  "source": "mock",
+  "generatedAt": "2026-04-21T12:00:00Z",
+  "listenerProfile": {
+    "listenerId": "listener_9f2a1c",
+    "displayName": "Jordan Rivera",
+    "country": "US",
+    "plan": "premium",
+    "ageRange": "25-34",
+    "timezone": "America/Los_Angeles",
+    "memberSince": "2023-01-14"
+  },
+  "summary": {
+    "monthlyActiveDays": 25,
+    "minutesStreamed30d": 5240,
+    "totalStreams30d": 1378,
+    "avgSessionMinutes": 42,
+    "skipRate": 0.18,
+    "saveRate": 0.27,
+    "repeatRate": 0.31,
+    "discoveryRate": 0.22,
+    "followerCount": 284
+  },
+  "topGenres30d": [
+    {
+      "genre": "Indie Pop",
+      "share": 0.26,
+      "changePct": 6.2
+    },
+    {
+      "genre": "Alternative Rock",
+      "share": 0.19,
+      "changePct": -2.1
+    },
+    {
+      "genre": "Lo-Fi Beats",
+      "share": 0.14,
+      "changePct": 8.7
+    },
+    {
+      "genre": "Synthwave",
+      "share": 0.13,
+      "changePct": 3.4
+    },
+    {
+      "genre": "Neo Soul",
+      "share": 0.1,
+      "changePct": 1.8
+    }
+  ],
+  "topArtists30d": [
+    {
+      "artistId": "artist_001",
+      "name": "Neon Atlas",
+      "minutes": 612,
+      "plays": 148,
+      "isNewThisMonth": false
+    },
+    {
+      "artistId": "artist_002",
+      "name": "Aurora District",
+      "minutes": 495,
+      "plays": 117,
+      "isNewThisMonth": false
+    },
+    {
+      "artistId": "artist_003",
+      "name": "Paper North",
+      "minutes": 401,
+      "plays": 96,
+      "isNewThisMonth": true
+    },
+    {
+      "artistId": "artist_004",
+      "name": "The Velocity",
+      "minutes": 379,
+      "plays": 88,
+      "isNewThisMonth": false
+    },
+    {
+      "artistId": "artist_005",
+      "name": "Mara Lane",
+      "minutes": 341,
+      "plays": 82,
+      "isNewThisMonth": true
+    }
+  ],
+  "topTracks30d": [
+    {
+      "trackId": "track_101",
+      "name": "Midnight Echo",
+      "artist": "Neon Atlas",
+      "album": "Afterglow",
+      "plays": 62,
+      "minutes": 218,
+      "liked": true
+    },
+    {
+      "trackId": "track_102",
+      "name": "Signal Bloom",
+      "artist": "Aurora District",
+      "album": "Skyline",
+      "plays": 54,
+      "minutes": 195,
+      "liked": true
+    },
+    {
+      "trackId": "track_103",
+      "name": "Lunar Arcade",
+      "artist": "Paper North",
+      "album": "Open Night",
+      "plays": 47,
+      "minutes": 171,
+      "liked": false
+    },
+    {
+      "trackId": "track_104",
+      "name": "Sunset Engine",
+      "artist": "The Velocity",
+      "album": "Drive Lines",
+      "plays": 42,
+      "minutes": 149,
+      "liked": true
+    },
+    {
+      "trackId": "track_105",
+      "name": "Soft Static",
+      "artist": "Mara Lane",
+      "album": "Night Signals",
+      "plays": 39,
+      "minutes": 142,
+      "liked": false
+    }
+  ],
+  "listeningPattern": {
+    "byHourLocal": [
+      { "hour": 0, "minutes": 42 },
+      { "hour": 1, "minutes": 21 },
+      { "hour": 2, "minutes": 14 },
+      { "hour": 3, "minutes": 7 },
+      { "hour": 4, "minutes": 4 },
+      { "hour": 5, "minutes": 9 },
+      { "hour": 6, "minutes": 28 },
+      { "hour": 7, "minutes": 61 },
+      { "hour": 8, "minutes": 113 },
+      { "hour": 9, "minutes": 158 },
+      { "hour": 10, "minutes": 191 },
+      { "hour": 11, "minutes": 246 },
+      { "hour": 12, "minutes": 307 },
+      { "hour": 13, "minutes": 331 },
+      { "hour": 14, "minutes": 297 },
+      { "hour": 15, "minutes": 276 },
+      { "hour": 16, "minutes": 289 },
+      { "hour": 17, "minutes": 344 },
+      { "hour": 18, "minutes": 391 },
+      { "hour": 19, "minutes": 463 },
+      { "hour": 20, "minutes": 521 },
+      { "hour": 21, "minutes": 487 },
+      { "hour": 22, "minutes": 352 },
+      { "hour": 23, "minutes": 196 }
+    ],
+    "byWeekday": [
+      { "day": "Mon", "minutes": 690 },
+      { "day": "Tue", "minutes": 705 },
+      { "day": "Wed", "minutes": 762 },
+      { "day": "Thu", "minutes": 748 },
+      { "day": "Fri", "minutes": 814 },
+      { "day": "Sat", "minutes": 865 },
+      { "day": "Sun", "minutes": 656 }
+    ],
+    "peakWindow": "19:00-22:00"
+  },
+  "playlistInsights": {
+    "totalPlaylists": 28,
+    "createdByListener": 11,
+    "collaborative": 4,
+    "mostPlayedPlaylist": {
+      "playlistId": "pl_220",
+      "name": "Late Night Commute",
+      "plays": 183,
+      "saves": 27
+    },
+    "topPlaylistThemes": [
+      "Focus",
+      "Drive",
+      "Chill",
+      "Gym"
+    ]
+  },
+  "recentlyPlayed": [
+    {
+      "playedAt": "2026-04-21T11:32:00Z",
+      "track": "Midnight Echo",
+      "artist": "Neon Atlas",
+      "contextType": "playlist"
+    },
+    {
+      "playedAt": "2026-04-21T11:27:00Z",
+      "track": "Framed Light",
+      "artist": "Mara Lane",
+      "contextType": "album"
+    },
+    {
+      "playedAt": "2026-04-21T11:22:00Z",
+      "track": "Signal Bloom",
+      "artist": "Aurora District",
+      "contextType": "playlist"
+    },
+    {
+      "playedAt": "2026-04-21T11:18:00Z",
+      "track": "Sunset Engine",
+      "artist": "The Velocity",
+      "contextType": "radio"
+    },
+    {
+      "playedAt": "2026-04-21T11:12:00Z",
+      "track": "Lunar Arcade",
+      "artist": "Paper North",
+      "contextType": "playlist"
+    }
+  ],
+  "recommendationSignals": {
+    "moodTags": [
+      "energetic",
+      "focus",
+      "late-night"
+    ],
+    "preferredTempoRangeBpm": {
+      "min": 88,
+      "max": 126
+    },
+    "explicitContentPreference": "mixed",
+    "languagePreference": [
+      "en",
+      "es"
+    ]
+  },
+  "chatbotContextHints": {
+    "favoriteArtist": "Neon Atlas",
+    "favoriteGenre": "Indie Pop",
+    "likelyIntentExamples": [
+      "recommend songs for studying",
+      "make a high-energy workout playlist",
+      "find tracks similar to Midnight Echo",
+      "show listening summary for this week"
+    ],
+    "responseStyle": "concise-friendly"
+  }
+}
